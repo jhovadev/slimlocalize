@@ -33,16 +33,7 @@ import {
   TranslationEditor,
   WorkspaceForm,
 } from "./forms";
-import {
-  IconCheck,
-  IconDatabase,
-  IconDownload,
-  IconFolder,
-  IconGlobe,
-  IconPlus,
-  IconSearch,
-  IconUpload,
-} from "./icons";
+import { AppIcon } from "./AppIcon";
 
 type View = "translations" | "environments" | "validation";
 type StatusKind = "idle" | "loading" | "saving" | "saved" | "error";
@@ -426,7 +417,7 @@ export function AppShell(props: { service: WorkspaceService }) {
       <header class="topbar">
         <div class="brand">
           <span class="brand__mark" aria-hidden="true">
-            <IconGlobe size={18} />
+            <AppIcon name="globe" size={18} />
           </span>
           <span>SlimLocalize</span>
           <span class="brand__tag">local-first</span>
@@ -456,7 +447,7 @@ export function AppShell(props: { service: WorkspaceService }) {
             variant="ghost"
             onClick={() => setShowWorkspaceForm(true)}
           >
-            <IconPlus /> Workspace
+            <AppIcon name="plus" /> Workspace
           </Button>
           <span class="storage-indicator" title={platform.storage}>
             <span class="storage-indicator__dot" />
@@ -488,7 +479,7 @@ export function AppShell(props: { service: WorkspaceService }) {
                     )}
                     onClick={() => void openProject(item.id)}
                   >
-                    <IconFolder />
+                    <AppIcon name="folder" />
                     <span>
                       <span>{item.name}</span>
                       <span class="project-button__meta">
@@ -506,7 +497,7 @@ export function AppShell(props: { service: WorkspaceService }) {
                 block
                 onClick={() => setShowProjectForm((open) => !open)}
               >
-                <IconPlus /> New project
+                <AppIcon name="plus" /> New project
               </Button>
             </Show>
             <Show when={showProjectForm() && workspace()}>
@@ -520,7 +511,7 @@ export function AppShell(props: { service: WorkspaceService }) {
           </div>
           <div class="sidebar__footer">
             <div class="row">
-              <IconDatabase /> Local data
+              <AppIcon name="database" /> Local data
             </div>
             <p>
               {platform.kind === "desktop"
@@ -580,7 +571,7 @@ export function AppShell(props: { service: WorkspaceService }) {
           <Show when={workspace() && !project()}>
             <div class="panel">
               <EmptyState
-                icon={<IconFolder size={22} />}
+                icon={<AppIcon name="folder" size={22} />}
                 title="No projects in this workspace"
                 description="Projects hold locales, translation keys and environments. Create one to start."
                 action={
@@ -618,17 +609,17 @@ export function AppShell(props: { service: WorkspaceService }) {
                       variant="secondary"
                       onClick={() => setShowImport((open) => !open)}
                     >
-                      <IconUpload /> Import
+                      <AppIcon name="upload" /> Import
                     </Button>
                     <Button
                       size="sm"
                       variant="secondary"
                       onClick={() => void exportProject()}
                     >
-                      <IconDownload /> Export
+                      <AppIcon name="download" /> Export
                     </Button>
                     <Button size="sm" onClick={() => void runCheck()}>
-                      <IconCheck /> Check
+                      <AppIcon name="check" /> Check
                     </Button>
                   </div>
                 </div>
@@ -841,7 +832,7 @@ export function AppShell(props: { service: WorkspaceService }) {
                               variant="ghost"
                               onClick={() => setShowLocaleForm((open) => !open)}
                             >
-                              <IconPlus /> Locale
+                              <AppIcon name="plus" /> Locale
                             </Button>
                             <Button
                               size="sm"
@@ -850,14 +841,14 @@ export function AppShell(props: { service: WorkspaceService }) {
                                 setShowNamespaceForm((open) => !open)
                               }
                             >
-                              <IconPlus /> Namespace
+                              <AppIcon name="plus" /> Namespace
                             </Button>
                             <Button
                               size="sm"
                               variant="secondary"
                               onClick={() => setSelected(null)}
                             >
-                              <IconPlus /> New key
+                              <AppIcon name="plus" /> New key
                             </Button>
                           </div>
 
@@ -887,7 +878,7 @@ export function AppShell(props: { service: WorkspaceService }) {
                                 when={filtered().length > 0}
                                 fallback={
                                   <EmptyState
-                                    icon={<IconSearch size={22} />}
+                                    icon={<AppIcon name="search" size={22} />}
                                     title="No translation keys"
                                     description="Create your first key in the editor, or import JSON locale files."
                                     action={
@@ -896,7 +887,7 @@ export function AppShell(props: { service: WorkspaceService }) {
                                         variant="secondary"
                                         onClick={() => setShowImport(true)}
                                       >
-                                        <IconUpload /> Import JSON
+                                        <AppIcon name="upload" /> Import JSON
                                       </Button>
                                     }
                                   />
@@ -1003,7 +994,7 @@ export function AppShell(props: { service: WorkspaceService }) {
                               variant="ghost"
                               onClick={() => setShowEnvForm((open) => !open)}
                             >
-                              <IconPlus /> Environment
+                              <AppIcon name="plus" /> Environment
                             </Button>
                           </div>
                           <Show when={showEnvForm()}>
@@ -1036,7 +1027,7 @@ export function AppShell(props: { service: WorkspaceService }) {
                                 when={variables().length > 0}
                                 fallback={
                                   <EmptyState
-                                    icon={<IconDatabase size={22} />}
+                                    icon={<AppIcon name="database" size={22} />}
                                     title="No variables"
                                     description="Add a public or local configuration value for this environment."
                                   />
@@ -1101,14 +1092,14 @@ export function AppShell(props: { service: WorkspaceService }) {
                               </div>
                               <span class="grow" />
                               <Button onClick={() => void runCheck()}>
-                                <IconCheck /> Run check
+                                <AppIcon name="check" /> Run check
                               </Button>
                             </div>
                             <Show
                               when={report()}
                               fallback={
                                 <EmptyState
-                                  icon={<IconCheck size={22} />}
+                                  icon={<AppIcon name="check" size={22} />}
                                   title="Not checked yet"
                                   description="Run validation to detect missing translations and placeholder mismatches."
                                 />
@@ -1222,7 +1213,7 @@ export function AppShell(props: { service: WorkspaceService }) {
                 >
                   <div class="panel">
                     <EmptyState
-                      icon={<IconGlobe size={22} />}
+                      icon={<AppIcon name="globe" size={22} />}
                       title="Add your first locale"
                       description="Translations are stored per locale. Start with a default locale such as en-US."
                       action={

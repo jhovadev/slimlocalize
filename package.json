@@ -16,7 +16,8 @@
     "typecheck": "bun run --cwd packages/platform typecheck && bun run --cwd packages/client-sdk typecheck && bun run --cwd packages/ui typecheck && bun run --cwd apps/web typecheck && bun run --cwd apps/client typecheck",
     "test": "bun run --cwd packages/platform test && bun run --cwd packages/client-sdk test && bun run --cwd packages/ui test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "icons:optimize": "find packages apps docs -type f -name '*.svg' -print0 | xargs -0 -r svgo --config svgo.config.mjs",
+    "icons:check": "find packages apps docs -type f -name '*.svg' -print0 | xargs -0 -r svgo --config svgo.config.mjs --dry-run"
   },
   "devDependencies": {
     "@playwright/test": "1.65.1",

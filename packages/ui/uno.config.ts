@@ -1,7 +1,31 @@
-import { defineConfig, presetUno } from "unocss";
+import { defineConfig, presetIcons, presetWind4 } from "unocss";
 
 export default defineConfig({
-  presets: [presetUno()],
+  presets: [
+    presetWind4(),
+    presetIcons({
+      scale: 1.2,
+      extraProperties: {
+        "display": "inline-block",
+        "vertical-align": "middle",
+      },
+    }),
+  ],
+  content: {
+    pipeline: {
+      include: [
+        /\.([jt]sx?|html|mdx?)$/,
+        /packages\/ui\/src\/.*\.(tsx|ts)$/,
+        /apps\/(client|web)\/src\/.*\.(tsx|ts|html)$/,
+      ],
+    },
+  },
+  shortcuts: {
+    "app-shell": "grid min-h-screen grid-rows-[auto_1fr]",
+    "panel": "rounded-xl border border-line bg-surface shadow-sm",
+    "field": "flex flex-col gap-1 min-w-0",
+    "btn": "inline-flex items-center justify-center gap-2 min-h-8.5 px-3.25 rounded-md text-sm font-semibold transition-colors",
+  },
   theme: {
     colors: {
       canvas: "var(--color-canvas)",

@@ -10,5 +10,6 @@ export default defineConfig({
     strictPort: true,
     watch: { ignored: ["**/src-tauri/**"] },
   },
+  css: { transformer: "lightningcss" },
   build: { target: "es2022" },
 });

@@ -1,5 +1,6 @@
 import { render } from "solid-js/web";
 import "@unocss/reset/tailwind.css";
+import "@slimlocalize/ui/tokens.css";
 import "virtual:uno.css";
 import "@slimlocalize/ui/styles.css";
 import { AppShell } from "@slimlocalize/ui";

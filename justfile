@@ -149,3 +149,29 @@ release-check:
     just docker-config
     ./scripts/git-audit.sh
     @echo "release checks passed"
+
+ui-dev:
+    bun run --cwd apps/web dev
+
+ui-test:
+    bun run test
+
+ui-visual:
+    bunx playwright test --config apps/web/playwright.config.ts
+
+ui-audit:
+    bun run typecheck
+    bun run test
+    bun run build:web
+
+icons-optimize:
+    bun run icons:optimize
+
+icons-check:
+    bun run icons:check
+
+css-build:
+    bun run build:web
+
+css-audit:
+    bun run --cwd packages/ui test
