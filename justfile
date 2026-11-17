@@ -115,6 +115,9 @@ sync-ps:
 sync-test:
     cargo test -p slimlocalize-collaboration
 
+sync-relay-e2e:
+    cargo test -p slimlocalize-collaboration --test relay_e2e
+
 sync-smoke:
     docker compose --profile collaboration up -d sync-relay
     @sleep 8
@@ -132,3 +135,17 @@ ci: fmt-check lint typecheck test build docker-config
 clean:
     @read -r -p "Remove target/, node_modules/, dist/, backups/? [y/N] " answer; \
     case "$$answer" in y|Y) rm -rf target node_modules apps/*/node_modules packages/*/node_modules apps/*/dist packages/*/dist apps/web/dist backups; echo "cleaned";; *) echo "aborted";; esac
+
+git-audit:
+    ./scripts/git-audit.sh
+
+release-check:
+    just fmt-check
+    just lint
+    just typecheck
+    just test
+    just sync-test
+    just sync-relay-e2e
+    just docker-config
+    ./scripts/git-audit.sh
+    @echo "release checks passed"

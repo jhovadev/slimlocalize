@@ -99,3 +99,27 @@ just sync-up
 just sync-ps
 just sync-down
 ```
+
+## Architecture
+
+```mermaid
+flowchart LR
+  UI[SolidJS UI] --> Tauri[Tauri 2]
+  UI --> Web[Web Adapter]
+  Tauri --> Core[Rust Domain Core]
+  Web --> Core
+  Core --> SQLite[(SQLite)]
+  Core --> Loro[Loro CRDT]
+  CLI[localize CLI] --> Core
+  MCP[MCP Local] --> Core
+  Server[Axum Server] --> Core
+  Relay[Sync Relay] --> Loro
+  Relay --> SQLiteRelay[(Relay SQLite)]
+```
+
+## Roadmap
+
+- F0/F1: local workspace, translations, environments, CLI, Tauri, web and Docker.
+- F2A: durable Loro collaboration and file-based sync.
+- F2B: authenticated sharing, invitations, relay hardening and production security.
+- F3: mobile hardening, web durable storage, MCP remote and agent workflows.
