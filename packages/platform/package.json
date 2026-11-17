@@ -1,0 +1,25 @@
+{
+  "name": "@slimlocalize/platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared platform contracts and desktop/web adapters for SlimLocalize",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./web": "./src/web.ts",
+    "./tauri": "./src/tauri.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.12.5"
+  },
+  "devDependencies": {
+    "jsdom": "31.0.1",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

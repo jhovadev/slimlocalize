@@ -1,0 +1,26 @@
+[package]
+name = "slimlocalize-storage"
+description = "SQLite adapter for SlimLocalize with versioned migrations"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+chrono.workspace = true
+directories.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+slimlocalize-core.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

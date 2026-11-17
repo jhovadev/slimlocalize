@@ -1,0 +1,26 @@
+{
+  "name": "slimlocalize",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.4",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:desktop": "bun run --cwd apps/client tauri dev",
+    "dev:web": "bun run --cwd apps/web dev",
+    "build:desktop": "bun run --cwd apps/client tauri build",
+    "build:web": "bun run --cwd apps/web build",
+    "typecheck": "bun run --cwd packages/platform typecheck && bun run --cwd packages/client-sdk typecheck && bun run --cwd packages/ui typecheck && bun run --cwd apps/web typecheck && bun run --cwd apps/client typecheck",
+    "test": "bun run --cwd packages/platform test && bun run --cwd packages/client-sdk test && bun run --cwd packages/ui test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "prettier": "3.10.1",
+    "typescript": "7.0.2"
+  }
+}

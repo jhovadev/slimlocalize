@@ -1,0 +1,33 @@
+name: slimlocalize
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: slimlocalize/server:local
+    container_name: slimlocalize-server
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    ports:
+      - "127.0.0.1:8787:8787"
+    environment:
+      SLIMLOCALIZE_BIND: "0.0.0.0:8787"
+      SLIMLOCALIZE_DB: "/data/slimlocalize.sqlite3"
+      SLIMLOCALIZE_LOG: "info"
+      SLIMLOCALIZE_LOG_FORMAT: "json"
+      SLIMLOCALIZE_ALLOW_PUBLIC_READONLY: "true"
+    volumes:
+      - slimlocalize-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8787/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  slimlocalize-data:
+    name: slimlocalize-data

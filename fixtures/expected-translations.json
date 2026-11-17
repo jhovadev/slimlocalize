@@ -1,0 +1,32 @@
+[
+  {
+    "key": "welcome",
+    "en-US": "Welcome, {name}!",
+    "es-PE": "¡Bienvenido!",
+    "de-DE": "Willkommen, {name}!"
+  },
+  {
+    "key": "save",
+    "en-US": "Save",
+    "es-PE": "Guardar",
+    "de-DE": "Speichern"
+  },
+  {
+    "key": "items",
+    "en-US": "{count} items",
+    "es-PE": "{count} elementos",
+    "de-DE": "{count} Elemente"
+  },
+  {
+    "key": "auth.signIn",
+    "en-US": "Sign in",
+    "es-PE": "Iniciar sesión",
+    "de-DE": "Anmelden"
+  },
+  {
+    "key": "auth.signOut",
+    "en-US": "Sign out",
+    "es-PE": null,
+    "de-DE": "Abmelden"
+  }
+]

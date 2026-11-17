@@ -1,0 +1,16 @@
+target/
+node_modules/
+.bun/
+dist/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+.git
+.github
+docs
+tests
+fixtures
+examples
+skills
+apps
+packages

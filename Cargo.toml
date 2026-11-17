@@ -1,0 +1,69 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/core",
+    "crates/security",
+    "crates/storage",
+    "crates/collaboration",
+    "crates/mcp",
+    "crates/server",
+    "crates/cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT"
+authors = ["SlimLocalize contributors"]
+repository = "https://github.com/slimlocalize/slimlocalize"
+homepage = "https://github.com/slimlocalize/slimlocalize"
+description = "Local-first internationalization workspace with optional cloud infrastructure"
+
+[workspace.dependencies]
+slimlocalize-core = { path = "crates/core", version = "0.1.0" }
+slimlocalize-security = { path = "crates/security", version = "0.1.0" }
+slimlocalize-storage = { path = "crates/storage", version = "0.1.0" }
+slimlocalize-collaboration = { path = "crates/collaboration", version = "0.1.0" }
+slimlocalize-mcp = { path = "crates/mcp", version = "0.1.0" }
+
+axum = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4.6", features = ["derive", "env"] }
+directories = "6"
+loro = "1.18"
+rusqlite = { version = "0.43", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "net", "time"] }
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", features = ["trace", "timeout", "limit"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+http-body-util = "0.1"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+must_use_candidate = "allow"
+too_many_lines = "allow"
+too_many_arguments = "allow"
+items_after_statements = "allow"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"
+
+[profile.dev.package."*"]
+opt-level = 1

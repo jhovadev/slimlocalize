@@ -1,0 +1,9 @@
+{
+  "welcome": "Willkommen, {name}!",
+  "save": "Speichern",
+  "items": "{count} Elemente",
+  "auth": {
+    "signIn": "Anmelden",
+    "signOut": "Abmelden"
+  }
+}

@@ -1,0 +1,21 @@
+[package]
+name = "slimlocalize-collaboration"
+description = "Loro CRDT prototype and sync contracts for SlimLocalize"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+loro.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+slimlocalize-core.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,17 @@
+min_version = "2026.1.0"
+
+[settings]
+experimental = true
+auto_install = true
+lockfile = true
+
+[env]
+SLIMLOCALIZE_LOG = "info"
+SLIMLOCALIZE_DB = "{{config_root}}/.slimlocalize/slimlocalize.sqlite3"
+RUST_BACKTRACE = "1"
+
+[tools]
+rust = "1.99.1"
+bun = "1.4.4"
+node = "24.22.2"
+just = "1.59.0"
