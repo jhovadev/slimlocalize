@@ -97,6 +97,36 @@ docker-config:
 docker-ps:
     docker compose ps
 
+sync-build:
+    docker compose --profile collaboration build sync-relay
+
+sync-up:
+    docker compose --profile collaboration up -d sync-relay
+
+sync-down:
+    docker compose --profile collaboration down
+
+sync-logs:
+    docker compose --profile collaboration logs -f sync-relay
+
+sync-ps:
+    docker compose --profile collaboration ps
+
+sync-test:
+    cargo test -p slimlocalize-collaboration
+
+sync-smoke:
+    docker compose --profile collaboration up -d sync-relay
+    @sleep 8
+    curl -fsS http://127.0.0.1:8791/
+    docker compose --profile collaboration down
+
+sync-demo:
+    @echo "Use two isolated SQLite databases and the CLI sync commands:"
+    @echo "  localize --db peer-a.sqlite3 sync bootstrap --project <slug>"
+    @echo "  localize --db peer-a.sqlite3 sync export --project <slug> --output a.loro"
+    @echo "  localize --db peer-b.sqlite3 sync import --project <slug> a.loro"
+
 ci: fmt-check lint typecheck test build docker-config
 
 clean:

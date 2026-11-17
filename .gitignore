@@ -38,3 +38,72 @@ Thumbs.db
 coverage/
 playwright-report/
 test-results/
+
+
+# =========================================
+# SlimLocalize — Generated files
+# =========================================
+
+# Rust / Cargo (all nested workspaces)
+target/
+**/target/
+
+# JavaScript / Bun
+node_modules/
+**/node_modules/
+.pnpm-store/
+.bun/
+.npm/
+.yarn/cache/
+
+# Frontend generated outputs
+dist/
+**/dist/
+coverage/
+**/coverage/
+.vite/
+*.tsbuildinfo
+
+# Testing
+playwright-report/
+test-results/
+.nyc_output/
+
+# Runtime databases
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite3-shm
+*.sqlite3-wal
+*.db
+*.db-shm
+*.db-wal
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.orig
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.idea/
+
+# Local runtime data
+/data/

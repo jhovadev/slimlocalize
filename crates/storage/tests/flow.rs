@@ -32,11 +32,11 @@ fn fixture() -> Fixture {
 fn migrations_are_versioned_and_idempotent() {
     let fixture = fixture();
     let store = SqliteStore::open(&fixture.db).expect("open");
-    assert_eq!(store.schema_version().unwrap(), 1);
+    assert_eq!(store.schema_version().unwrap(), 2);
     store.health_check().unwrap();
     drop(store);
     let store = SqliteStore::open(&fixture.db).expect("reopen");
-    assert_eq!(store.schema_version().unwrap(), 1);
+    assert_eq!(store.schema_version().unwrap(), 2);
     let stats = store.stats().unwrap();
     assert_eq!(stats.workspaces, 0);
     assert_eq!(stats.journal_mode.to_lowercase(), "wal");

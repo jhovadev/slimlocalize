@@ -6,6 +6,7 @@
 //!
 //! See `docs/architecture/overview.md` for the dependency rules.
 
+pub mod collab;
 pub mod error;
 pub mod events;
 pub mod model;

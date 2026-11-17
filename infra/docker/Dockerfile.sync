@@ -1,0 +1,25 @@
+FROM rust:1.99-bookworm AS builder
+WORKDIR /app
+COPY apps/sync-relay ./apps/sync-relay
+WORKDIR /app/apps/sync-relay
+RUN cargo build --release
+
+FROM debian:bookworm-slim AS runtime
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl util-linux libsqlite3-0 \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 --shell /usr/sbin/nologin slimlocalize
+COPY --from=builder /app/apps/sync-relay/target/release/slimlocalize-sync-relay /usr/local/bin/slimlocalize-sync-relay
+COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/slimlocalize-sync-relay /usr/local/bin/docker-entrypoint.sh
+ENV SLIM_SYNC_BIND=0.0.0.0:8787
+ENV SLIM_SYNC_HEALTH_BIND=0.0.0.0:8788
+ENV SLIM_SYNC_DB=/data/sync.sqlite
+ENV SLIM_SYNC_MODE=development
+ENV SLIM_SYNC_SAVE_INTERVAL_MS=1000
+VOLUME ["/data"]
+EXPOSE 8787 8788
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -fsS http://127.0.0.1:8788/ || exit 1
+ENTRYPOINT ["setpriv", "--reuid", "10001", "--regid", "10001", "--clear-groups"]
+CMD ["/usr/local/bin/slimlocalize-sync-relay"]

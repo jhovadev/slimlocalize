@@ -79,3 +79,23 @@ just test-e2e
 ## License
 
 MIT. See `LICENSE`.
+
+## Collaboration
+
+Bootstrap a collaborative document and exchange updates between two local peers:
+
+```bash
+localize sync bootstrap --project demo-app
+localize sync export --project demo-app --output changes.loro
+localize sync import --project demo-app changes.loro
+localize sync status --project demo-app
+localize sync inspect changes.loro
+```
+
+Run the optional relay:
+
+```bash
+just sync-up
+just sync-ps
+just sync-down
+```

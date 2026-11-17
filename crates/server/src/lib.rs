@@ -347,7 +347,7 @@ mod tests {
         assert_eq!(body["mode"], "read-only");
         let (status, body) = json_response(app, "/readyz").await;
         assert_eq!(status, StatusCode::OK);
-        assert_eq!(body["schemaVersion"], 1);
+        assert_eq!(body["schemaVersion"], 2);
     }
 
     #[tokio::test]

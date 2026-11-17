@@ -52,6 +52,12 @@ pub fn run() {
             commands::list_config_variables,
             commands::set_config_variable,
             commands::check_project,
+            commands::collab_bootstrap,
+            commands::collab_export,
+            commands::collab_import,
+            commands::collab_rebuild_projection,
+            commands::collab_status,
+            commands::collab_validate,
             commands::export_project,
             commands::import_project,
         ])

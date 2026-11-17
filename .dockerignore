@@ -13,4 +13,6 @@ fixtures
 examples
 skills
 apps
+!apps/sync-relay
+!apps/sync-relay/**
 packages

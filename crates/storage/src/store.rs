@@ -190,7 +190,7 @@ impl SqliteStore {
         Ok(destination)
     }
 
-    fn lock(&self) -> Result<MutexGuard<'_, Connection>> {
+    pub(crate) fn lock(&self) -> Result<MutexGuard<'_, Connection>> {
         self.connection
             .lock()
             .map_err(|_| DomainError::internal("database mutex is poisoned"))

@@ -10,12 +10,21 @@ repository.workspace = true
 homepage.workspace = true
 
 [dependencies]
+base64 = "0.22"
+chrono.workspace = true
+hex = "0.4"
 loro.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2 = "0.10"
 slimlocalize-core.workspace = true
+slimlocalize-storage.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
+
+[dev-dependencies]
+rusqlite.workspace = true
+tempfile.workspace = true
 
 [lints]
 workspace = true

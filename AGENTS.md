@@ -7,7 +7,8 @@
 - `crates/server`: optional read-only Axum server.
 - `crates/cli`: `localize` executable.
 - `crates/mcp`: read-only MCP tool registry.
-- `crates/collaboration`: Loro prototype.
+- `crates/collaboration`: durable Loro documents and sync envelopes.
+- `apps/sync-relay`: optional Loro WebSocket relay.
 - `crates/security`: security primitives and contracts.
 - `packages/platform`: TypeScript contracts and adapters.
 - `packages/ui`: SolidJS design system and workspace UI.
@@ -22,6 +23,8 @@ just fmt-check
 just lint
 just typecheck
 just test
+just sync-test
+just test-e2e
 just build
 just docker-config
 ```

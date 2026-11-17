@@ -6,7 +6,10 @@ use slimlocalize_core::{DomainError, Result};
 /// Ordered, append-only schema migrations embedded in the binary.
 ///
 /// Never edit a migration that has shipped; add a new version instead.
-pub const MIGRATIONS: &[(i64, &str)] = &[(1, include_str!("../migrations/0001_init.sql"))];
+pub const MIGRATIONS: &[(i64, &str)] = &[
+    (1, include_str!("../migrations/0001_init.sql")),
+    (2, include_str!("../migrations/0002_collaboration.sql")),
+];
 
 pub fn configure(connection: &Connection) -> Result<()> {
     connection

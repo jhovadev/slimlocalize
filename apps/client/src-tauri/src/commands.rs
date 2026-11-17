@@ -8,6 +8,7 @@ use slimlocalize_core::{
     ExportOptions, ExportReport, ImportOptions, ImportReport, Locale, LocalizeService, Namespace,
     Project, SaveTranslationInput, SetConfigVariableInput, TranslationEntry, Workspace,
 };
+use slimlocalize_collaboration::{CollaborationService, CollabStatus, SyncEnvelope};
 use slimlocalize_storage::SqliteStore;
 use tauri::State;
 use uuid::Uuid;
@@ -244,6 +245,83 @@ pub async fn import_project(
                 namespace,
             },
         )
+    })
+    .await
+}
+
+
+#[tauri::command]
+pub async fn collab_status(
+    state: State<'_, AppState>,
+    project_id: Uuid,
+) -> Result<CollabStatus, ApiError> {
+    run(&state, move |service| {
+        let collab = CollaborationService::new(service.store_arc(), "tauri-peer");
+        collab.status(project_id)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn collab_bootstrap(
+    state: State<'_, AppState>,
+    project_id: Uuid,
+) -> Result<CollabStatus, ApiError> {
+    run(&state, move |service| {
+        let collab = CollaborationService::new(service.store_arc(), "tauri-peer");
+        collab.bootstrap(project_id)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn collab_export(
+    state: State<'_, AppState>,
+    project_id: Uuid,
+) -> Result<String, ApiError> {
+    run(&state, move |service| {
+        let collab = CollaborationService::new(service.store_arc(), "tauri-peer");
+        let envelope = collab.export_update(project_id)?;
+        Ok(serde_json::to_string_pretty(&envelope)?)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn collab_import(
+    state: State<'_, AppState>,
+    project_id: Uuid,
+    payload: String,
+) -> Result<CollabStatus, ApiError> {
+    run(&state, move |service| {
+        let collab = CollaborationService::new(service.store_arc(), "tauri-peer");
+        let envelope: SyncEnvelope = serde_json::from_str(&payload)?;
+        collab.import_update(project_id, &envelope)?;
+        collab.status(project_id)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn collab_rebuild_projection(
+    state: State<'_, AppState>,
+    project_id: Uuid,
+) -> Result<(), ApiError> {
+    run(&state, move |service| {
+        let collab = CollaborationService::new(service.store_arc(), "tauri-peer");
+        collab.rebuild_projection(project_id)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn collab_validate(
+    state: State<'_, AppState>,
+    project_id: Uuid,
+) -> Result<CheckReport, ApiError> {
+    run(&state, move |service| {
+        let collab = CollaborationService::new(service.store_arc(), "tauri-peer");
+        collab.validate(project_id)
     })
     .await
 }

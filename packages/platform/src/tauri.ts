@@ -4,6 +4,7 @@ import type {
   AddLocaleInput,
   AppInfo,
   CheckReport,
+  CollabStatus,
   ConfigVariable,
   CreateEnvironmentInput,
   CreateProjectInput,
@@ -115,6 +116,19 @@ export function createTauriWorkspaceService(): WorkspaceService {
 
     checkProject: (projectId: string) =>
       call<CheckReport>("check_project", { projectId }),
+
+    collabStatus: (projectId: string) =>
+      call<CollabStatus>("collab_status", { projectId }),
+    collabBootstrap: (projectId: string) =>
+      call<CollabStatus>("collab_bootstrap", { projectId }),
+    collabExport: (projectId: string) =>
+      call<string>("collab_export", { projectId }),
+    collabImport: (projectId: string, payload: string) =>
+      call<CollabStatus>("collab_import", { projectId, payload }),
+    collabRebuildProjection: (projectId: string) =>
+      call<void>("collab_rebuild_projection", { projectId }),
+    collabValidate: (projectId: string) =>
+      call<CheckReport>("collab_validate", { projectId }),
 
     exportProject: (projectId: string, options: ExportOptions = {}) =>
       call<ExportResult>("export_project", {

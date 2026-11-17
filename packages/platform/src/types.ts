@@ -204,6 +204,17 @@ export interface ExportResult {
  * Shared contract used by desktop, web, the CLI-facing SDK and tests.
  * Domain validation and persistence are implemented by each adapter.
  */
+export interface CollabStatus {
+  projectId: string;
+  documentId: string;
+  peerId: number;
+  documentKey: string;
+  versionVector: number[];
+  updateCount: number;
+  hasPending: boolean;
+  schemaVersion: number;
+}
+
 export interface WorkspaceService {
   readonly platform: PlatformInfo;
   getInfo(): Promise<AppInfo>;
@@ -245,6 +256,12 @@ export interface WorkspaceService {
     projectId: string,
     options?: ExportOptions,
   ): Promise<ExportResult>;
+  collabStatus?(projectId: string): Promise<CollabStatus>;
+  collabBootstrap?(projectId: string): Promise<CollabStatus>;
+  collabExport?(projectId: string): Promise<string>;
+  collabImport?(projectId: string, payload: string): Promise<CollabStatus>;
+  collabRebuildProjection?(projectId: string): Promise<void>;
+  collabValidate?(projectId: string): Promise<CheckReport>;
 
   /** Desktop adapter: import a directory or JSON file path. */
   importFromPath?(

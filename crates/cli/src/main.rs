@@ -7,6 +7,7 @@ use chrono::Local;
 use clap::{Parser, Subcommand};
 use serde::Serialize;
 use serde_json::json;
+use slimlocalize_collaboration::{CollaborationService, SyncEnvelope};
 use slimlocalize_core::ports::Store;
 use slimlocalize_core::{
     AddLocaleInput, ConfigVisibility, CreateEnvironmentInput, CreateNamespaceInput,
@@ -96,6 +97,11 @@ enum Command {
     Db {
         #[command(subcommand)]
         command: DbCommand,
+    },
+    /// Local collaboration commands.
+    Sync {
+        #[command(subcommand)]
+        command: SyncCommand,
     },
     /// Local read-only MCP server over stdio.
     Mcp {
@@ -321,6 +327,54 @@ enum DbCommand {
 }
 
 #[derive(Debug, Subcommand)]
+enum SyncCommand {
+    Status {
+        #[arg(long)]
+        workspace: Option<String>,
+        #[arg(long)]
+        project: Option<String>,
+    },
+    Bootstrap {
+        #[arg(long)]
+        workspace: Option<String>,
+        #[arg(long)]
+        project: Option<String>,
+    },
+    Export {
+        #[arg(long)]
+        workspace: Option<String>,
+        #[arg(long)]
+        project: Option<String>,
+        #[arg(long)]
+        output: PathBuf,
+    },
+    Import {
+        #[arg(long)]
+        workspace: Option<String>,
+        #[arg(long)]
+        project: Option<String>,
+        path: PathBuf,
+    },
+    Inspect {
+        path: PathBuf,
+        #[arg(long)]
+        project: Option<String>,
+    },
+    RebuildProjection {
+        #[arg(long)]
+        workspace: Option<String>,
+        #[arg(long)]
+        project: Option<String>,
+    },
+    Validate {
+        #[arg(long)]
+        workspace: Option<String>,
+        #[arg(long)]
+        project: Option<String>,
+    },
+}
+
+#[derive(Debug, Subcommand)]
 enum McpCommand {
     /// Serve the read-only tool registry over stdin/stdout.
     Serve,
@@ -371,6 +425,7 @@ fn run(cli: &Cli) -> Result<u8, CliError> {
         Command::Env { command } => environment(&service, command, json)?,
         Command::Config { command } => config(&service, command, json)?,
         Command::Db { command } => database(&service, command, &db_path, json)?,
+        Command::Sync { command } => return sync(&service, command, json),
         Command::Mcp { command } => match command {
             McpCommand::Serve => {
                 let server = McpServer::new(Arc::clone(&service));
@@ -725,6 +780,16 @@ fn translation(
                 status: TranslationStatus::parse(status)?,
                 description: description.clone(),
             })?;
+            let collab = CollaborationService::new(service.store_arc(), "cli-peer");
+            let _ = collab.bootstrap(project.id);
+            let _ = collab.set_translation(
+                project.id,
+                namespace,
+                key,
+                locale,
+                value,
+                TranslationStatus::parse(status)?,
+            );
             print_value(json, &entry, || {
                 println!(
                     "Saved {}/{} [{}] = {:?}",
@@ -784,6 +849,8 @@ fn import(
             namespace: command.namespace.clone(),
         },
     )?;
+    let collab = CollaborationService::new(service.store_arc(), "cli-peer");
+    let _ = collab.sync_from_sql(project.id);
     print_value(json, &report, || {
         println!(
             "Imported {} files: {} locales created, {} keys created, {} values written",
@@ -1248,6 +1315,111 @@ fn resolve_environment(
         .ok_or_else(|| {
             DomainError::not_found("environment", format!("{name} (project {})", project.slug))
         })
+}
+
+fn sync(
+    service: &LocalizeService<SqliteStore>,
+    command: &SyncCommand,
+    json: bool,
+) -> Result<u8, CliError> {
+    let collab = CollaborationService::new(service.store_arc(), "cli-peer");
+    match command {
+        SyncCommand::Status { workspace, project } => {
+            let project = resolve_project(service, workspace.as_deref(), project.as_deref())?;
+            let status = collab.bootstrap(project.id)?;
+            print_value(json, &status, || {
+                println!("Document: {}", status.document_key);
+                println!("Peer: {}", status.peer_id);
+                println!("Version vector: {} bytes", status.version_vector.len());
+                println!("Updates: {}", status.update_count);
+                println!("Pending updates: {}", status.has_pending);
+            })?;
+        }
+        SyncCommand::Bootstrap { workspace, project } => {
+            let project = resolve_project(service, workspace.as_deref(), project.as_deref())?;
+            let status = collab.bootstrap(project.id)?;
+            print_value(json, &status, || {
+                println!("Bootstrapped {}", status.document_key)
+            })?;
+        }
+        SyncCommand::Export {
+            workspace,
+            project,
+            output,
+        } => {
+            let project = resolve_project(service, workspace.as_deref(), project.as_deref())?;
+            let envelope = collab.export_update(project.id)?;
+            let serialized = serde_json::to_string_pretty(&envelope)?;
+            std::fs::write(output, serialized).map_err(|source| CliError::Io {
+                context: "write sync export".to_owned(),
+                source,
+            })?;
+            print_value(json, &envelope, || {
+                println!("Exported sync update to {}", output.display());
+            })?;
+        }
+        SyncCommand::Import {
+            workspace,
+            project,
+            path,
+        } => {
+            let project = resolve_project(service, workspace.as_deref(), project.as_deref())?;
+            let raw = std::fs::read_to_string(path).map_err(|source| CliError::Io {
+                context: "read sync file".to_owned(),
+                source,
+            })?;
+            let envelope: SyncEnvelope = serde_json::from_str(&raw)?;
+            collab.import_update(project.id, &envelope)?;
+            let status = collab.status(project.id)?;
+            print_value(json, &status, || {
+                println!("Imported update into {}", status.document_key);
+            })?;
+        }
+        SyncCommand::Inspect { path, project } => {
+            let raw = std::fs::read_to_string(path).map_err(|source| CliError::Io {
+                context: "read sync file".to_owned(),
+                source,
+            })?;
+            let envelope: SyncEnvelope = serde_json::from_str(&raw)?;
+            if let Some(project) = project {
+                let project = resolve_project(service, None, Some(project))?;
+                envelope.validate(project.id)?;
+            }
+            print_value(json, &envelope, || {
+                println!("Format: {}", envelope.format);
+                println!("Protocol: {}", envelope.protocol_version);
+                println!("Schema: {}", envelope.schema_version);
+                println!("Project: {}", envelope.project_id);
+                println!("Document: {}", envelope.document_key);
+                println!("Peer: {}", envelope.peer_id);
+                println!("Version vector: {}", envelope.version_vector);
+                println!("Payload bytes: {}", envelope.payload.len());
+            })?;
+        }
+        SyncCommand::RebuildProjection { workspace, project } => {
+            let project = resolve_project(service, workspace.as_deref(), project.as_deref())?;
+            collab.rebuild_projection(project.id)?;
+            print_value(json, &serde_json::json!({"rebuilt": true}), || {
+                println!("Rebuilt SQL projection for {}", project.slug);
+            })?;
+        }
+        SyncCommand::Validate { workspace, project } => {
+            let project = resolve_project(service, workspace.as_deref(), project.as_deref())?;
+            let report = collab.validate(project.id)?;
+            let has_issues = report.has_issues();
+            print_value(json, &report, || {
+                println!(
+                    "Validation: {} missing, {} placeholder mismatches",
+                    report.missing.len(),
+                    report.placeholder_mismatches.len()
+                );
+            })?;
+            if has_issues {
+                return Ok(1);
+            }
+        }
+    }
+    Ok(0)
 }
 
 fn init_tracing(level: &str) {

@@ -401,6 +401,19 @@ impl<S: Store> LocalizeService<S> {
         self.store.list_keys(project_id)
     }
 
+    pub fn list_project_translations(&self, project_id: Uuid) -> Result<Vec<TranslationEntry>> {
+        self.get_project(project_id)?;
+        let locales = self.store.list_locales(project_id)?;
+        let mut entries = Vec::new();
+        for locale in locales {
+            entries.extend(
+                self.store
+                    .list_translations(project_id, &locale.code, None)?,
+            );
+        }
+        Ok(entries)
+    }
+
     pub fn get_translation(
         &self,
         project_id: Uuid,

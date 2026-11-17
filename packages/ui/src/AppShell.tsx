@@ -1,6 +1,7 @@
 import { createMemo, createSignal, For, onMount, Show } from "solid-js";
 import type {
   CheckReport,
+  CollabStatus,
   ConfigVariable,
   Environment,
   Locale,
@@ -19,6 +20,7 @@ import {
   Notice,
   SelectField,
   StatusChip,
+  TextareaField,
   cx,
 } from "./components";
 import {
@@ -63,6 +65,11 @@ export function AppShell(props: { service: WorkspaceService }) {
   const [environmentId, setEnvironmentId] = createSignal("");
   const [variables, setVariables] = createSignal<ConfigVariable[]>([]);
   const [report, setReport] = createSignal<CheckReport | null>(null);
+  const [collabStatus, setCollabStatus] = createSignal<CollabStatus | null>(
+    null,
+  );
+  const [collabPayload, setCollabPayload] = createSignal("");
+  const [collabBusy, setCollabBusy] = createSignal(false);
   const [view, setView] = createSignal<View>("translations");
   const [status, setStatus] = createSignal<PageStatus>({
     kind: "loading",
@@ -164,6 +171,7 @@ export function AppShell(props: { service: WorkspaceService }) {
       if (locale && namespace)
         await loadEntries(id, locale.code, namespace.name);
       if (env) await loadVariables(env.id);
+      await loadCollabStatus();
       setStatus({ kind: "idle" });
     } catch (cause) {
       fail(cause);
@@ -305,6 +313,59 @@ export function AppShell(props: { service: WorkspaceService }) {
     );
     setReport(result);
     setView("validation");
+  }
+  async function loadCollabStatus() {
+    const current = project();
+    if (!current || !props.service.collabStatus) return;
+    try {
+      setCollabStatus(await props.service.collabStatus(current.id));
+    } catch (cause) {
+      fail(cause);
+    }
+  }
+  async function bootstrapCollab() {
+    const current = project();
+    if (!current || !props.service.collabBootstrap) return;
+    setCollabBusy(true);
+    try {
+      setCollabStatus(await props.service.collabBootstrap(current.id));
+      finish("Collaboration document ready");
+      await loadCollabStatus();
+    } catch (cause) {
+      fail(cause);
+    } finally {
+      setCollabBusy(false);
+    }
+  }
+  async function exportCollab() {
+    const current = project();
+    if (!current || !props.service.collabExport) return;
+    setCollabBusy(true);
+    try {
+      setCollabPayload(await props.service.collabExport(current.id));
+      finish("Sync envelope exported");
+    } catch (cause) {
+      fail(cause);
+    } finally {
+      setCollabBusy(false);
+    }
+  }
+  async function importCollab() {
+    const current = project();
+    if (!current || !props.service.collabImport || !collabPayload().trim())
+      return;
+    setCollabBusy(true);
+    try {
+      setCollabStatus(
+        await props.service.collabImport(current.id, collabPayload()),
+      );
+      await openProject(current.id);
+      finish("Sync envelope imported");
+    } catch (cause) {
+      fail(cause);
+    } finally {
+      setCollabBusy(false);
+    }
   }
   async function exportProject() {
     const current = project();
@@ -591,6 +652,110 @@ export function AppShell(props: { service: WorkspaceService }) {
                         onSubmitFiles={importFromFiles}
                         onCancel={() => setShowImport(false)}
                       />
+                    </div>
+                  </div>
+                </Show>
+
+                <Show when={props.service.collabStatus}>
+                  <div class="panel" style="margin-bottom:16px">
+                    <div class="panel__header">
+                      <h2 class="panel__title">Local collaboration</h2>
+                      <Show when={collabStatus()}>
+                        <Badge tone="accent">
+                          peer {collabStatus()!.peerId}
+                        </Badge>
+                      </Show>
+                    </div>
+                    <div class="panel__body stack">
+                      <Show
+                        when={collabStatus()}
+                        fallback={
+                          <p class="muted">
+                            No collaboration document has been initialized for
+                            this project.
+                          </p>
+                        }
+                      >
+                        <div class="row">
+                          <span class="muted">
+                            Document:{" "}
+                            <strong>{collabStatus()!.documentKey}</strong>
+                          </span>
+                          <span class="muted">
+                            Updates: {collabStatus()!.updateCount}
+                          </span>
+                          <span class="muted">
+                            Pending: {collabStatus()!.hasPending ? "yes" : "no"}
+                          </span>
+                          <span class="muted">
+                            Version: {collabStatus()!.versionVector.length}{" "}
+                            bytes
+                          </span>
+                        </div>
+                      </Show>
+                      <div class="row">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          loading={collabBusy()}
+                          onClick={() => void bootstrapCollab()}
+                        >
+                          Bootstrap document
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          loading={collabBusy()}
+                          onClick={() => void exportCollab()}
+                        >
+                          Export update
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          loading={collabBusy()}
+                          onClick={() =>
+                            void (
+                              project() &&
+                              props.service.collabRebuildProjection?.(
+                                project()!.id,
+                              )
+                            )
+                          }
+                        >
+                          Rebuild projection
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          loading={collabBusy()}
+                          onClick={() =>
+                            void (
+                              project() &&
+                              props.service
+                                .collabValidate?.(project()!.id)
+                                .then(setReport)
+                            )
+                          }
+                        >
+                          Validate
+                        </Button>
+                      </div>
+                      <TextareaField
+                        label="Sync envelope (JSON)"
+                        value={collabPayload()}
+                        onInput={setCollabPayload}
+                        rows={6}
+                        hint="Export an envelope, share the file, then paste or load it here and import."
+                      />
+                      <div class="form-actions">
+                        <Button
+                          loading={collabBusy()}
+                          onClick={() => void importCollab()}
+                        >
+                          Import update
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </Show>

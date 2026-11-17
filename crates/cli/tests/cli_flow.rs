@@ -148,7 +148,7 @@ fn cli_full_flow_uses_real_sqlite_and_persists() {
 
     let (code, doctor) = fixture.json(&["doctor"]);
     assert_eq!(code, 0);
-    assert_eq!(doctor["schemaVersion"], 1);
+    assert_eq!(doctor["schemaVersion"], 2);
     assert_eq!(doctor["stats"]["translationKeys"], 1);
 }
 

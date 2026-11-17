@@ -4,6 +4,7 @@
 //! backend implemented in F1. The domain talks to it through the `Store` port,
 //! never through SQL strings.
 
+mod collab;
 mod migrations;
 mod store;
 

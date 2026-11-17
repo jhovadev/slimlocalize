@@ -16,6 +16,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+slimlocalize-collaboration = { path = "../../../crates/collaboration", version = "0.1.0" }
 slimlocalize-core = { path = "../../../crates/core", version = "0.1.0" }
 slimlocalize-storage = { path = "../../../crates/storage", version = "0.1.0" }
 serde = { version = "1", features = ["derive"] }

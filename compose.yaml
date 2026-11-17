@@ -28,6 +28,37 @@ services:
       retries: 3
       start_period: 5s
 
+  sync-relay:
+    profiles: ["collaboration"]
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.sync
+    image: slimlocalize/sync-relay:local
+    container_name: slimlocalize-sync-relay
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    ports:
+      - "127.0.0.1:${SLIM_SYNC_PORT:-8790}:8787"
+      - "127.0.0.1:${SLIM_SYNC_HEALTH_PORT:-8791}:8788"
+    environment:
+      SLIM_SYNC_BIND: "0.0.0.0:8787"
+      SLIM_SYNC_HEALTH_BIND: "0.0.0.0:8788"
+      SLIM_SYNC_DB: "/data/sync.sqlite"
+      SLIM_SYNC_MODE: "development"
+      SLIM_SYNC_SAVE_INTERVAL_MS: "1000"
+    volumes:
+      - slim_sync_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8788/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
 volumes:
   slimlocalize-data:
     name: slimlocalize-data
+  slim_sync_data:
+    name: slim_sync_data
