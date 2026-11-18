@@ -8,14 +8,18 @@
     ".": "./src/index.ts",
     "./types": "./src/types.ts",
     "./web": "./src/web.ts",
-    "./tauri": "./src/tauri.ts"
+    "./tauri": "./src/tauri.ts",
+    "./web-sync": "./src/web-sync.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
-    "@tauri-apps/api": "2.12.5"
+    "@tauri-apps/api": "2.12.5",
+    "loro-crdt": "1.17.1",
+    "loro-websocket": "0.6.2",
+    "loro-adaptors": "0.6.1"
   },
   "devDependencies": {
     "jsdom": "31.0.1",

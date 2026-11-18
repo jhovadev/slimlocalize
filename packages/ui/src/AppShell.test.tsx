@@ -10,7 +10,7 @@ describe("AppShell", () => {
   it("bootstraps from real web persistence and creates a workspace", async () => {
     render(() => <AppShell service={createWebWorkspaceService()} />);
     expect(
-      await screen.findByText("Your translations, on your machine."),
+      await screen.findByRole("heading", { name: "Create your workspace" }),
     ).toBeInTheDocument();
     fireEvent.input(screen.getByLabelText("Workspace name"), {
       target: { value: "Demo Team" },
@@ -19,9 +19,7 @@ describe("AppShell", () => {
       screen.getByRole("button", { name: "Create workspace" }).closest("form")!,
     );
     await waitFor(() =>
-      expect(
-        screen.getByText("No projects in this workspace"),
-      ).toBeInTheDocument(),
+      expect(screen.getByText("Start with a project")).toBeInTheDocument(),
     );
     const service = createWebWorkspaceService();
     const workspaces = await service.listWorkspaces();

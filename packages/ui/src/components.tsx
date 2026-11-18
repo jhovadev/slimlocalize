@@ -1,4 +1,5 @@
 import { createUniqueId, Show, splitProps, type JSX } from "solid-js";
+import { CompactSelect } from "./CompactSelect";
 
 export function cx(
   ...values: Array<string | false | null | undefined>
@@ -116,21 +117,14 @@ export function SelectField(props: SelectProps) {
           {props.label}
         </label>
       </Show>
-      <select
+      <CompactSelect
         id={id}
-        class="select"
-        aria-label={props.ariaLabel ?? props.label}
+        ariaLabel={props.ariaLabel ?? props.label ?? "Select"}
         value={props.value}
         disabled={props.disabled}
-        onChange={(event) => props.onChange(event.currentTarget.value)}
-      >
-        <option value="" disabled>
-          Select…
-        </option>
-        {props.options.map((option) => (
-          <option value={option.value}>{option.label}</option>
-        ))}
-      </select>
+        onChange={props.onChange}
+        options={props.options}
+      />
     </div>
   );
 }

@@ -1254,3 +1254,110 @@ function normalizePlaceholderName(text: string): string {
 function isPlaceholderName(name: string): boolean {
   return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name);
 }
+
+/** Development-only pairing token containing project metadata, never credentials. */
+export function exportWebProjectCode(projectId: string): string {
+  const state = loadState();
+  const project = projectById(state, projectId);
+  const workspace = state.workspaces.find(
+    (entry) => entry.id === project.workspaceId,
+  );
+  if (!workspace) fail("not_found", "Workspace not found");
+  const seed = {
+    v: 1,
+    workspace,
+    project,
+    locales: state.locales.filter((locale) => locale.projectId === projectId),
+    namespaces: state.namespaces.filter((ns) => ns.projectId === projectId),
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(seed));
+  if (bytes.byteLength > 32_000)
+    fail("validation_error", "Project metadata is too large");
+  return `slim-dev-1:${btoa(String.fromCharCode(...bytes))}`;
+}
+
+/** Import stable IDs, so independent browser profiles join the *same* Loro room. */
+export function importWebProjectCode(code: string): Project {
+  if (!code.startsWith("slim-dev-1:") || code.length > 60_000)
+    fail("validation_error", "Invalid pairing code");
+  let seed: {
+    v: unknown;
+    workspace: Workspace;
+    project: Project;
+    locales: Locale[];
+    namespaces: Namespace[];
+  };
+  try {
+    const data = atob(code.slice("slim-dev-1:".length));
+    seed = JSON.parse(
+      new TextDecoder().decode(
+        Uint8Array.from(data, (value) => value.charCodeAt(0)),
+      ),
+    );
+  } catch {
+    return fail("validation_error", "Invalid pairing code");
+  }
+  if (
+    seed.v !== 1 ||
+    !seed.workspace ||
+    !seed.project ||
+    !Array.isArray(seed.locales) ||
+    !Array.isArray(seed.namespaces)
+  ) {
+    fail("validation_error", "Invalid project metadata");
+  }
+  const validId = (value: unknown): value is string =>
+    typeof value === "string" && /^[0-9a-f-]{36}$/i.test(value);
+  const validName = (value: unknown): value is string =>
+    typeof value === "string" && value.length > 0 && value.length <= 256;
+  if (
+    !validId(seed.workspace.id) ||
+    !validId(seed.project.id) ||
+    seed.workspace.id !== seed.project.workspaceId ||
+    !validName(seed.workspace.name) ||
+    !validName(seed.project.name) ||
+    !validName(seed.workspace.slug) ||
+    !validName(seed.project.slug) ||
+    seed.locales.length > 100 ||
+    seed.namespaces.length > 1000 ||
+    seed.locales.some(
+      (locale) =>
+        !validId(locale.id) ||
+        locale.projectId !== seed.project.id ||
+        !validName(locale.code),
+    ) ||
+    seed.namespaces.some(
+      (ns) =>
+        !validId(ns.id) ||
+        ns.projectId !== seed.project.id ||
+        !validName(ns.name),
+    )
+  ) {
+    fail("validation_error", "Invalid identifiers or project metadata");
+  }
+  const state = loadState();
+  if (!state.workspaces.some((item) => item.id === seed.workspace.id)) {
+    if (state.workspaces.some((item) => item.slug === seed.workspace.slug))
+      fail("conflict", "A different workspace already uses this name");
+    state.workspaces.push(seed.workspace);
+  }
+  if (!state.projects.some((item) => item.id === seed.project.id)) {
+    if (
+      state.projects.some(
+        (item) =>
+          item.workspaceId === seed.workspace.id &&
+          item.slug === seed.project.slug,
+      )
+    )
+      fail("conflict", "A different project already uses this name");
+    state.projects.push(seed.project);
+  }
+  for (const locale of seed.locales)
+    if (!state.locales.some((item) => item.id === locale.id))
+      state.locales.push(locale);
+  for (const ns of seed.namespaces)
+    if (!state.namespaces.some((item) => item.id === ns.id))
+      state.namespaces.push(ns);
+  saveState(state);
+  return seed.project;
+}

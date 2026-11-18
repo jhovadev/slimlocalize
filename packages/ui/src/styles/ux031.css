@@ -1,0 +1,82 @@
+/* UX-03.1 — structural layout hardening. The rail should never shift or shrink. */
+html,
+body,
+#root,
+.app {
+  background-color: #17120f;
+}
+.app {
+  min-width: 0;
+  min-height: 100dvh;
+}
+.app-body {
+  grid-template-columns: 216px minmax(0, 1fr);
+  min-width: 0;
+  align-items: stretch;
+}
+.sidebar {
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background-color: #1d1713;
+}
+.sidebar__projects,
+.sidebar__section,
+.ux-sidebar-navigation {
+  flex-shrink: 0;
+  min-width: 0;
+}
+.sidebar .ux-nav-item,
+.sidebar .project-button {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
+}
+.content {
+  min-width: 0;
+}
+@media (max-width: 960px) {
+  .app-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sidebar {
+    position: fixed;
+    top: 58px;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    height: calc(100dvh - 58px);
+    width: min(264px, 86vw);
+    z-index: 65;
+    transform: translate3d(-110%, 0, 0);
+    box-shadow: 15px 0 45px rgba(0, 0, 0, 0.35);
+  }
+  .sidebar.sidebar--open {
+    transform: translate3d(0, 0, 0);
+  }
+  .ux-mobile-scrim {
+    inset: 58px 0 0;
+    z-index: 64;
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+}
+@media (max-width: 700px) {
+  .sidebar {
+    top: 55px;
+    height: calc(100dvh - 55px);
+  }
+  .ux-mobile-scrim {
+    inset: 55px 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
+}

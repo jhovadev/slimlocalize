@@ -11,7 +11,7 @@ export interface PlatformCapabilities {
   /** Exports are written to a directory or downloaded by the browser. */
   downloadExports: boolean;
   nativeDatabase: boolean;
-  sync: false;
+  sync: boolean;
 }
 
 export interface PlatformInfo {
@@ -217,6 +217,10 @@ export interface CollabStatus {
 
 export interface WorkspaceService {
   readonly platform: PlatformInfo;
+  /** Optional ephemeral selection hint used only by collaborative clients. */
+  webSyncSetFocus?(focus: string | null): void;
+  /** Emitted after remote web updates are projected into the local domain. */
+  subscribeChanges?(callback: (projectId: string) => void): () => void;
   getInfo(): Promise<AppInfo>;
 
   listWorkspaces(): Promise<Workspace[]>;

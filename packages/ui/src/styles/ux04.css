@@ -1,0 +1,225 @@
+/* Compact navigation tree: no extra branding, no dashboard-style status badges. */
+.ux-tree {
+  margin: 10px 9px 0;
+  min-height: 0;
+  border-top: 1px solid #45372f;
+  padding-top: 12px;
+}
+.ux-tree-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 9px 8px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  font-weight: 650;
+  color: #b8a99a;
+  text-transform: uppercase;
+}
+.ux-tree-count {
+  font-size: 11px;
+  color: #a38f80;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.ux-tree-search {
+  height: 33px;
+  width: 100%;
+  background: #211a16;
+  color: #f3ede7;
+  border: 1px solid #45372f;
+  border-radius: 8px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+.ux-tree-search:focus-visible {
+  border-color: #c08a5b;
+  box-shadow: 0 0 0 2px rgba(192, 138, 91, 0.18);
+}
+.ux-tree-scroller {
+  margin: 9px -3px 0;
+  max-height: min(48dvh, 440px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 15px;
+}
+.ux-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: 32px;
+  min-width: 0;
+}
+.ux-tree-indent,
+.ux-tree-expand {
+  width: 19px;
+  height: 27px;
+  flex: none;
+}
+.ux-tree-expand {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #a89586;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 5px;
+}
+.ux-tree-expand:hover {
+  background: #342922;
+}
+.ux-tree-chevron {
+  transition: transform 100ms ease;
+}
+.ux-tree-chevron--open {
+  transform: rotate(90deg);
+}
+.ux-tree-item {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+  justify-content: space-between;
+  gap: 5px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #c5b8ac;
+  padding: 0 8px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.ux-tree-item:hover {
+  background: #2e251f;
+  color: #f3ede7;
+}
+.ux-tree-item--selected {
+  background: #3d2c22;
+  color: #f6d6b9;
+}
+.ux-tree-item:focus-visible {
+  outline: 2px solid #c08a5b;
+  outline-offset: -2px;
+}
+.ux-tree-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ux-tree-empty {
+  padding: 12px;
+  font-size: 12px;
+  color: #9f8e81;
+}
+@media (max-width: 960px) {
+  .ux-tree {
+    margin-bottom: 16px;
+  }
+  .ux-tree-item,
+  .ux-tree-expand {
+    min-height: 36px;
+  }
+  .ux-tree-row {
+    min-height: 38px;
+    height: auto;
+  }
+  .ux-tree-scroller {
+    max-height: 36dvh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ux-tree-chevron {
+    transition: none;
+  }
+}
+/* Collaboration controls only appear in Settings, never in the topbar. */
+.ux-websync {
+  border: 1px solid #45372f;
+  border-radius: 12px;
+  padding: 16px;
+  background: #211a16;
+  max-width: 650px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ux-websync h3 {
+  font-size: 15px;
+  color: #f3ede7;
+  margin: 0;
+}
+.ux-websync p,
+.ux-websync small {
+  color: #b8a99a;
+  margin: 0;
+  font-size: 12px;
+}
+.ux-websync label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d9c9ba;
+}
+.ux-websync textarea {
+  width: 100%;
+  min-height: 66px;
+  resize: vertical;
+  padding: 10px;
+  background: #17120f;
+  color: #f3ede7;
+  border: 1px solid #45372f;
+  border-radius: 8px;
+  font:
+    12px/1.5 ui-monospace,
+    monospace;
+}
+.ux-websync textarea:focus-visible {
+  outline: 2px solid #c08a5b;
+  outline-offset: 1px;
+}
+.ux-websync-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.ux-websync button {
+  background: #2a211c;
+  border: 1px solid #594333;
+  border-radius: 7px;
+  color: #f3ede7;
+  cursor: pointer;
+  min-height: 34px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 12px;
+}
+.ux-websync button:hover:not([disabled]) {
+  background: #3d3027;
+}
+.ux-websync button:focus-visible {
+  outline: 2px solid #c08a5b;
+}
+.ux-websync button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ux-websync .ux-websync-join {
+  align-self: flex-start;
+  background: #c08a5b;
+  color: #17120f;
+  border-color: #c08a5b;
+  font-weight: 600;
+}
+.ux-websync-state {
+  color: #d3b596;
+  font-size: 12px;
+}
+.ux-websync .ux-websync-error {
+  color: #e6a098;
+}
