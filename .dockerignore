@@ -35,3 +35,9 @@ packages
 
 .env
 .env.*
+
+# Include the Bun/Solid workspaces for the separate production web image.
+!apps/
+!apps/**
+!packages/
+!packages/**

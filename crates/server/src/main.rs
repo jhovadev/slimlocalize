@@ -50,6 +50,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_path = args.db.unwrap_or_else(default_database_path);
     let store = SqliteStore::open(&db_path)?;
     let service = Arc::new(LocalizeService::new(store));
+    if std::env::var("SLIM_MCP_TOKEN").is_ok_and(|token| token.len() < 32) {
+        return Err("SLIM_MCP_TOKEN must contain at least 32 characters".into());
+    }
     let app = router(Arc::clone(&service));
 
     let listener = TcpListener::bind(args.bind).await?;

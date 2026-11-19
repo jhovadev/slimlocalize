@@ -44,9 +44,14 @@ export interface WebSyncWorkspaceService extends WorkspaceService {
   subscribePeers(callback: (peers: WebPeer[]) => void): () => void;
   webSyncSetFocus(focus: string | null): void;
   webSyncSetName(name: string): void;
+  webSyncConfigure(url: string, teamKey: string): void;
+  webSyncServer(): string;
 }
 
-const DEFAULT_RELAY = "ws://127.0.0.1:8790";
+const DEFAULT_RELAY =
+  typeof window !== "undefined" && window.location.protocol === "https:"
+    ? `wss://${window.location.host}/sync/`
+    : "ws://127.0.0.1:8790";
 const LAST_PROJECT = "slimlocalize.websync.activeProject.v1";
 const DATABASE_NAME = "slimlocalize.websync.v1";
 const SCHEMA = 1;
@@ -59,15 +64,15 @@ type DiskDocument = {
   snapshot: Uint8Array;
   pending?: Uint8Array;
 };
-function assertLocalRelay(value: string): string {
+/** Enforce TLS for all remote relays and forbid credentials in URLs. */
+export function validateCollaborationRelay(value: string): string {
   const url = new URL(value);
-  if (
-    url.protocol !== "ws:" ||
-    !["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)
-  ) {
-    throw new Error(
-      "Development collaboration only supports a local relay. Remote sharing requires authentication.",
-    );
+  if (url.username || url.password || url.hash || url.search) {
+    throw new Error("Do not put collaboration credentials in a URL");
+  }
+  const local = ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname);
+  if (url.protocol !== "wss:" && !(url.protocol === "ws:" && local)) {
+    throw new Error("Remote collaboration requires wss:// (TLS)");
   }
   return url.href;
 }
@@ -167,6 +172,27 @@ export function createSynchronizedWebWorkspaceService(): WebSyncWorkspaceService
   let connecting: Promise<void> | undefined;
   let currentProject: string | null = null;
   let currentPeer = 1;
+  let relayAddress = DEFAULT_RELAY;
+  // Team keys are never saved in localStorage, IndexedDB or pairing codes.
+  let relayKey = "";
+  // One-time rejoin handoff for the reload after importing a project.
+  try {
+    const cached = sessionStorage.getItem("slimlocalize.websync.rejoin.v1");
+    sessionStorage.removeItem("slimlocalize.websync.rejoin.v1");
+    if (cached) {
+      const data = JSON.parse(cached) as {
+        url: string;
+        key: string;
+        until: number;
+      };
+      if (data.until > Date.now() && data.until < Date.now() + 120_001) {
+        relayAddress = validateCollaborationRelay(data.url);
+        relayKey = data.key;
+      }
+    }
+  } catch {
+    /* Bad or unavailable session storage: require key again. */
+  }
   let generation = 0;
   let applyingRemote = false;
 
@@ -383,7 +409,7 @@ export function createSynchronizedWebWorkspaceService(): WebSyncWorkspaceService
         }
       });
       const ws = new LoroWebsocketClient({
-        url: assertLocalRelay(DEFAULT_RELAY),
+        url: validateCollaborationRelay(relayAddress),
       });
       client = ws;
       unsubscribeStatus = ws.onStatusChange((state) => {
@@ -403,11 +429,16 @@ export function createSynchronizedWebWorkspaceService(): WebSyncWorkspaceService
       });
       await ws.waitConnected();
       if (generation !== myGeneration) return;
-      room = await ws.join({ roomId: id, crdtAdaptor: new LoroAdaptor(next) });
+      const auth = new TextEncoder().encode(relayKey);
+      room = await ws.join({
+        roomId: id,
+        crdtAdaptor: new LoroAdaptor(next),
+        auth,
+      });
       presence = new WebPresence(localName);
       presence.setFocus(localFocus);
       unlistenPeers = presence.subscribe(notifyPeers);
-      await presence.join(ws, id);
+      await presence.join(ws, id, auth);
       await mirrorQueue;
       await mirror(projectId, next);
       localStorage.setItem(LAST_PROJECT, projectId);
@@ -483,6 +514,22 @@ export function createSynchronizedWebWorkspaceService(): WebSyncWorkspaceService
       if (env) dispatchChange(env.projectId);
       return saved;
     },
+    webSyncConfigure(url: string, teamKey: string) {
+      if (currentProject)
+        throw new Error("Disconnect before changing the collaboration server");
+      const parsed = validateCollaborationRelay(url.trim());
+      const key = teamKey.trim();
+      if (parsed.startsWith("wss:") && key.length < 32) {
+        throw new Error(
+          "Enter the 32+ character team key provided by the server owner",
+        );
+      }
+      relayAddress = parsed;
+      relayKey = key;
+    },
+    webSyncServer() {
+      return relayAddress;
+    },
     webSyncPeers() {
       return presence?.peers() ?? [];
     },
@@ -508,6 +555,12 @@ export function createSynchronizedWebWorkspaceService(): WebSyncWorkspaceService
     async webSyncStop() {
       localStorage.removeItem(LAST_PROJECT);
       await stop();
+      relayKey = "";
+      try {
+        sessionStorage.removeItem("slimlocalize.websync.rejoin.v1");
+      } catch {
+        /* ignored */
+      }
     },
     webSyncInfo() {
       return { ...info };
@@ -519,6 +572,21 @@ export function createSynchronizedWebWorkspaceService(): WebSyncWorkspaceService
       const imported = importWebProjectCode(code);
       localStorage.setItem(LAST_PROJECT, imported.id);
       await start(imported.id);
+      // The UI reloads after importing metadata: hand off credentials once for 2 minutes.
+      if (relayKey && relayAddress.startsWith("wss:")) {
+        try {
+          sessionStorage.setItem(
+            "slimlocalize.websync.rejoin.v1",
+            JSON.stringify({
+              url: relayAddress,
+              key: relayKey,
+              until: Date.now() + 120_000,
+            }),
+          );
+        } catch {
+          /* Browser disabled sessionStorage. Re-enter key after reload. */
+        }
+      }
     },
     subscribeChanges(callback: (projectId: string) => void) {
       changes.add(callback);
@@ -536,7 +604,7 @@ export function createSynchronizedWebWorkspaceService(): WebSyncWorkspaceService
     // Called by the browser entrypoint only when the user previously enabled sync.
     async restoreWebSync() {
       const id = localStorage.getItem(LAST_PROJECT);
-      if (id) await start(id);
+      if (id && (!relayAddress.startsWith("wss:") || relayKey)) await start(id);
     },
   } as WebSyncWorkspaceService;
 }

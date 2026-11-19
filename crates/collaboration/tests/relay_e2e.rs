@@ -32,17 +32,34 @@ async fn wait_for_value(doc: &Arc<Mutex<LoroDoc>>, key: &str, expected: &str) {
     );
 }
 
-async fn wait_health(port: u16) {
-    for _ in 0..100 {
-        if reqwest::get(format!("http://127.0.0.1:{port}/"))
-            .await
-            .is_ok()
+async fn wait_health(port: u16, relay: &mut Child) {
+    // A cold nested `cargo run` may need to compile a changed relay binary.
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(90);
+    while tokio::time::Instant::now() < deadline {
+        if let Some(status) = relay.try_wait().expect("poll relay child") {
+            panic!("sync relay exited before health became ready: {status}");
+        }
+        if let Ok(Ok(response)) = tokio::time::timeout(
+            Duration::from_millis(500),
+            reqwest::get(format!("http://127.0.0.1:{port}/")),
+        )
+        .await
+            && response.status().is_success()
         {
             return;
         }
         sleep(Duration::from_millis(100)).await;
     }
-    panic!("relay health did not become ready");
+    panic!("relay health did not become ready in 90s; check nested cargo output");
+}
+fn choose_ports() -> (u16, u16) {
+    // Hold both sockets until distinct OS-assigned test ports are selected.
+    let ws = std::net::TcpListener::bind(("127.0.0.1", 0)).expect("reserve websocket test port");
+    let health = std::net::TcpListener::bind(("127.0.0.1", 0)).expect("reserve health test port");
+    (
+        ws.local_addr().expect("ws local address").port(),
+        health.local_addr().expect("health local address").port(),
+    )
 }
 
 fn spawn_relay(port: u16, health_port: u16, db: &std::path::Path) -> Child {
@@ -63,11 +80,10 @@ fn spawn_relay(port: u16, health_port: u16, db: &std::path::Path) -> Child {
 async fn relay_round_trips_loro_updates() {
     let temp = tempfile::tempdir().unwrap();
     let db = temp.path().join("sync.sqlite");
-    let port = 8792u16;
-    let health_port = 8793u16;
+    let (port, health_port) = choose_ports();
 
     let mut relay = spawn_relay(port, health_port, &db);
-    wait_health(health_port).await;
+    wait_health(health_port, &mut relay).await;
 
     let client_a = LoroWebsocketClient::connect(&format!("ws://127.0.0.1:{port}"))
         .await
@@ -165,7 +181,7 @@ async fn relay_round_trips_loro_updates() {
     relay.kill().unwrap();
     let _ = relay.wait();
     let mut relay2 = spawn_relay(port, health_port, &db);
-    wait_health(health_port).await;
+    wait_health(health_port, &mut relay2).await;
 
     let client_a2 = LoroWebsocketClient::connect(&format!("ws://127.0.0.1:{port}"))
         .await

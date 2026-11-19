@@ -8,6 +8,8 @@ interface DevelopmentWebSync {
   webSyncShareCode(projectId: string): Promise<string>;
   webSyncJoinCode(code: string): Promise<void>;
   webSyncSetName(name: string): void;
+  webSyncConfigure(url: string, teamKey: string): void;
+  webSyncServer(): string;
   subscribeSync(
     cb: (status: {
       status: string;
@@ -36,6 +38,30 @@ export function WebSyncPanel(props: {
   const [status, setStatus] = createSignal("off");
   const [error, setError] = createSignal("");
   const [busy, setBusy] = createSignal(false);
+  const [relayUrl, setRelayUrl] = createSignal(
+    available(props.service)
+      ? props.service.webSyncServer()
+      : "ws://127.0.0.1:8790",
+  );
+  const [teamKey, setTeamKey] = createSignal("");
+  const configure = () => {
+    (props.service as WorkspaceService & DevelopmentWebSync).webSyncConfigure(
+      relayUrl(),
+      teamKey(),
+    );
+  };
+  const connectProject = async () => {
+    configure();
+    await (props.service as WorkspaceService & DevelopmentWebSync).webSyncStart(
+      props.project.id,
+    );
+  };
+  const joinProject = async (code: string) => {
+    configure();
+    await (
+      props.service as WorkspaceService & DevelopmentWebSync
+    ).webSyncJoinCode(code);
+  };
   onMount(() => {
     if (!available(props.service)) return;
     const off = props.service.subscribeSync((value) => {
@@ -61,10 +87,36 @@ export function WebSyncPanel(props: {
       <section class="ux-websync" aria-labelledby="ux-websync-title">
         <h3 id="ux-websync-title">Share this project</h3>
         <p>
-          Share translations and public environment variables with another
-          browser. Local-only values stay on this device. Development testing
-          only.
+          Share translations and public environment variables. Local-only values
+          stay on this device. Use a secure server and your team key when
+          collaborating remotely.
         </p>
+        <label class="ux-websync-name">
+          Collaboration server
+          <input
+            aria-label="Collaboration server URL"
+            type="url"
+            spellcheck={false}
+            value={relayUrl()}
+            onInput={(event) => setRelayUrl(event.currentTarget.value)}
+            placeholder="wss://your-domain.example/sync/"
+          />
+        </label>
+        <label class="ux-websync-name">
+          Team access key (remote only)
+          <input
+            aria-label="Team access key"
+            type="password"
+            autocomplete="off"
+            value={teamKey()}
+            onInput={(event) => setTeamKey(event.currentTarget.value)}
+            placeholder="Paste the private team key"
+          />
+        </label>
+        <small>
+          The team key is not saved in localStorage or pairing codes; a
+          short-lived tab handoff permits joining after reload.
+        </small>
         <label class="ux-websync-name">
           Your display name
           <input
@@ -85,13 +137,7 @@ export function WebSyncPanel(props: {
           <button
             type="button"
             disabled={busy()}
-            onClick={() =>
-              void run(() =>
-                (
-                  props.service as WorkspaceService & DevelopmentWebSync
-                ).webSyncStart(props.project.id),
-              )
-            }
+            onClick={() => void run(() => connectProject())}
           >
             Connect
           </button>
@@ -151,9 +197,7 @@ export function WebSyncPanel(props: {
           disabled={busy() || !code().startsWith("slim-dev-1:")}
           onClick={() =>
             void run(async () => {
-              await (
-                props.service as WorkspaceService & DevelopmentWebSync
-              ).webSyncJoinCode(code());
+              await joinProject(code());
               // Existing AppShell bootstrap reads the newly imported workspace on startup.
               window.location.reload();
             })
@@ -167,8 +211,9 @@ export function WebSyncPanel(props: {
           </p>
         </Show>
         <small>
-          Do not expose this development relay to the internet. Shared text is
-          not encrypted.
+          Shared data is visible to anyone with the team key. Use HTTPS/WSS and
+          rotate the key when access changes. End-to-end encryption is not
+          enabled.
         </small>
       </section>
     </Show>

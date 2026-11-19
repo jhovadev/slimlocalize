@@ -38,8 +38,12 @@ export class WebPresence {
     this.name = normalizeName(name);
   }
 
-  async join(client: LoroWebsocketClient, roomId: string): Promise<void> {
-    this.room = await client.join({ roomId, crdtAdaptor: this.adaptor });
+  async join(
+    client: LoroWebsocketClient,
+    roomId: string,
+    auth = new Uint8Array(),
+  ): Promise<void> {
+    this.room = await client.join({ roomId, crdtAdaptor: this.adaptor, auth });
     this.connected = true;
     this.unsub = this.store.subscribe(() => this.notify());
     this.announce();

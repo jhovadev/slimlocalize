@@ -5,6 +5,9 @@
 //! unless the operator explicitly opts in. Write endpoints, sharing and remote
 //! collaboration are intentionally absent.
 
+mod remote_mcp;
+mod remote_mcp_sync;
+
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -27,6 +30,9 @@ use tower_http::trace::TraceLayer;
 #[derive(Clone)]
 pub struct AppState {
     pub service: Arc<LocalizeService<SqliteStore>>,
+    pub(crate) mcp_token: Option<Arc<str>>,
+    pub(crate) mcp_allowed_origin: Option<Arc<str>>,
+    pub(crate) sync_db_path: Option<Arc<str>>,
 }
 
 impl std::fmt::Debug for AppState {
@@ -36,10 +42,28 @@ impl std::fmt::Debug for AppState {
 }
 
 pub fn router(service: Arc<LocalizeService<SqliteStore>>) -> Router {
-    let state = AppState { service };
+    let mcp_token = std::env::var("SLIM_MCP_TOKEN")
+        .ok()
+        .filter(|token| token.len() >= 32)
+        .map(Arc::<str>::from);
+    let mcp_allowed_origin = std::env::var("SLIM_MCP_ALLOWED_ORIGIN")
+        .ok()
+        .filter(|origin| !origin.is_empty())
+        .map(Arc::<str>::from);
+    let sync_db_path = std::env::var("SLIM_SYNC_DB_READONLY")
+        .ok()
+        .filter(|path| !path.is_empty())
+        .map(Arc::<str>::from);
+    let state = AppState {
+        service,
+        mcp_token,
+        mcp_allowed_origin,
+        sync_db_path,
+    };
     Router::new()
         .route("/healthz", get(health))
         .route("/readyz", get(ready))
+        .route("/mcp", axum::routing::post(remote_mcp::handler))
         .route("/api/v1/workspaces", get(list_workspaces))
         .route(
             "/api/v1/workspaces/{workspace}/projects",
@@ -66,6 +90,7 @@ pub fn router(service: Arc<LocalizeService<SqliteStore>>) -> Router {
             get(check_project),
         )
         .with_state(state)
+        .layer(axum::extract::DefaultBodyLimit::max(64 * 1024))
         .layer(TimeoutLayer::with_status_code(
             StatusCode::REQUEST_TIMEOUT,
             Duration::from_secs(15),

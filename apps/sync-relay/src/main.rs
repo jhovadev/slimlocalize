@@ -37,8 +37,8 @@ struct Args {
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let args = Args::parse();
     init_tracing();
-    if args.mode == "production" && args.token.is_none() {
-        return Err("production mode requires SLIM_SYNC_TOKEN".into());
+    if args.mode == "production" && args.token.as_deref().is_none_or(|key| key.len() < 32) {
+        return Err("production mode requires a SLIM_SYNC_TOKEN of at least 32 characters".into());
     }
 
     init_db(&args.db).await?;
@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                     Some(value) => value,
                     None => return Ok(None),
                 };
-                if auth == expected.into_bytes() {
+                if constant_time_equal(&auth, expected.as_bytes()) {
                     Ok(Some(loro_websocket_server::protocol::Permission::Write))
                 } else {
                     Ok(None)
@@ -104,23 +104,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         fut
     });
 
-    let handshake_token = args.token.clone();
-    let handshake_auth: Arc<dyn Fn(&str, Option<&str>) -> bool + Send + Sync> =
-        Arc::new(move |_workspace, token| {
-            if let Some(expected) = &handshake_token {
-                token == Some(expected.as_str())
-            } else {
-                true
-            }
-        });
-
+    // Do not place shared secrets in WebSocket URLs. The authenticate callback
+    // denies each join (including ephemeral rooms) unless its auth bytes match.
+    // A connection alone never authorizes reading a document.
     let cfg = ServerConfig {
         on_load_document: Some(on_load),
         on_save_document: Some(on_save),
         save_interval_ms: Some(args.save_interval_ms),
         default_permission: loro_websocket_server::protocol::Permission::Read,
         authenticate: Some(authenticate),
-        handshake_auth: Some(handshake_auth),
+        handshake_auth: None,
     };
 
     let listener = TcpListener::bind(&args.bind).await?;
@@ -231,4 +224,26 @@ fn init_tracing() {
         .json()
         .with_current_span(false)
         .init();
+}
+
+/// Avoid byte-by-byte early exits when comparing a shared team key.
+fn constant_time_equal(a: &[u8], b: &[u8]) -> bool {
+    let mut difference = a.len() ^ b.len();
+    for index in 0..a.len().max(b.len()) {
+        let left = a.get(index).copied().unwrap_or(0);
+        let right = b.get(index).copied().unwrap_or(0);
+        difference |= usize::from(left ^ right);
+    }
+    difference == 0
+}
+
+#[cfg(test)]
+mod security_tests {
+    use super::constant_time_equal;
+    #[test]
+    fn rejects_short_and_incorrect_keys() {
+        assert!(constant_time_equal(b"correct-team-key", b"correct-team-key"));
+        assert!(!constant_time_equal(b"correct-team-key", b"other-team-key"));
+        assert!(!constant_time_equal(b"correct-team-key", b"correct-team-key-extra"));
+    }
 }

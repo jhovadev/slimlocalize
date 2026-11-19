@@ -1,0 +1,80 @@
+# Private-team preview. Use Dokploy's HTTPS domain on the web service (port 8080).
+# Never attach public domains to server or sync-relay.
+name: slimlocalize-team
+services:
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.web
+    image: slimlocalize/web:team
+    restart: unless-stopped
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    tmpfs:
+      - /tmp
+    ports:
+      - "127.0.0.1:${SLIM_WEB_PORT:-8080}:8080"
+    depends_on:
+      sync-relay:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+
+  sync-relay:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.sync
+    image: slimlocalize/sync-relay:team
+    restart: unless-stopped
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: [/tmp]
+    expose: ["8787"]
+    environment:
+      SLIM_SYNC_BIND: "0.0.0.0:8787"
+      SLIM_SYNC_HEALTH_BIND: "0.0.0.0:8788"
+      SLIM_SYNC_DB: "/data/sync.sqlite"
+      SLIM_SYNC_MODE: "production"
+      SLIM_SYNC_TOKEN: "${SLIM_SYNC_TOKEN:?Set a randomly generated 32+ character team key}"
+      SLIM_SYNC_SAVE_INTERVAL_MS: "1000"
+    volumes:
+      - slim-sync-team-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8788/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: slimlocalize/server:team
+    restart: unless-stopped
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: [/tmp]
+    expose: ["8787"]
+    environment:
+      SLIMLOCALIZE_BIND: "0.0.0.0:8787"
+      SLIMLOCALIZE_ALLOW_PUBLIC_READONLY: "true"
+      SLIMLOCALIZE_DB: "/data/slimlocalize.sqlite3"
+      SLIMLOCALIZE_LOG_FORMAT: "json"
+      SLIM_MCP_TOKEN: "${SLIM_MCP_TOKEN:?Set a separate randomly generated 32+ character MCP key}"
+      SLIM_SYNC_DB_READONLY: "/sync-data/sync.sqlite"
+      # Browser Origins are denied for MCP by default. Keep this empty for CLI agents.
+      SLIM_MCP_ALLOWED_ORIGIN: "${SLIM_MCP_ALLOWED_ORIGIN:-}"
+    volumes:
+      - slim-api-team-data:/data
+      - slim-sync-team-data:/sync-data:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8787/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  slim-sync-team-data:
+  slim-api-team-data:
