@@ -41,3 +41,12 @@ packages
 !apps/**
 !packages/
 !packages/**
+
+
+# Keep generated files out of all build contexts
+**/node_modules
+**/target
+**/dist
+**/coverage
+**/test-results
+**/playwright-report
